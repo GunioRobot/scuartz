@@ -10,13 +10,26 @@ import org.specs.specification._
 
 import Scuartz._
 
-class ScuartzSpecs extends Specification with DetailedFailures {
-  class TestJob extends Job {
-    def execute(ctxt : JobExecutionContext) {
-      println("test")
-    }
+class TestJob extends Job {
+  def execute(ctxt : JobExecutionContext) {
+    println("test")
   }
-    
+}
+
+object CounterJob {
+  var counter = 0
+}
+
+class CounterJob extends Job {
+  def execute(ctx : JobExecutionContext){
+    CounterJob.counter += 1
+    println(CounterJob.counter)
+  }
+} 
+
+
+class ScuartzSpecs extends Specification with DetailedFailures {
+  
   "Scuartz" should {
     val sched = StdSchedulerFactory.getDefaultScheduler
 
@@ -39,29 +52,18 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       val now = System.currentTimeMillis
       (sched.schedule { "test" named "test2" at (now + 5000l) every 1000l until (new Date(now + 10000l)) }).isExpectation
     }
-
-    "schedule a job from a function" in {
-      (sched.schedule {(() ⇒ { println("Tick!") }) as "ticker" every 1000l }).isExpectation
-      
+    
+    "schedule a job from a compliant class" in {
+      (sched.schedule {
+        classOf[TestJob] as "ticker" every 1000l }).isExpectation
     }
-
+    
     "schedule a closure properly" in {
       sched.start()
-
-      // Let's actually do something in this spec
-      var counter = 0
-      val incrementer = () => {
-        counter += 1
-        println("Counter = " + counter)
-      }
-
-      sched.schedule { incrementer as "incrementer" after 1000l every 100l repeat 5 }
-
+      sched.schedule { classOf[CounterJob] as "incrementer" after 1000l every 100l repeat 5 }
       Thread.sleep(3000l)
-
       sched.shutdown()
-
-      counter must_== 5
+      CounterJob.counter must_== 5
     }
   }
 }

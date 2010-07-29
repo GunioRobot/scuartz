@@ -4,6 +4,7 @@ import java.util.Date
 import org.quartz.{Job,JobDetail,JobExecutionContext,Scheduler,SimpleTrigger,Trigger}
 
 object Scuartz {
+  
   class RichScheduler (val underlying : Scheduler) {
     def schedule (trigger : RichTrigger) : RichScheduler = {
       trigger match {
@@ -21,29 +22,25 @@ object Scuartz {
     }
   }
 
-  class JobInfo(val f : JobExecutionContext ⇒ Unit) {
+  class JobInfo[T  <: Job](clazz: Class[T]) {
     val detail = new JobDetail
     val trigger = new SimpleTrigger
-
-    detail.setJobClass((new Job {
-      def execute (context : JobExecutionContext) = {
-        f(context)
-      }
-    }).getClass)
-
-    def as (name : String) : RichTrigger = {
+    
+    detail.setJobClass(clazz)
+    
+    def as(name : String) : RichTrigger = {
       detail.setName(name)
       trigger.setName(name)
       trigger.setJobName(name)
-
+      
       // Set a default schedule
       trigger.setStartTime(new Date)
-
+      
       RichTrigger(trigger, Some(this))
     }
   }
 
-  case class RichTrigger(underlying : SimpleTrigger, job : Option[JobInfo]) {
+  case class RichTrigger(underlying : SimpleTrigger, job : Option[JobInfo[_]]) {
     def at (time : Date) : RichTrigger = {
       underlying.setStartTime(time)
       this
@@ -83,10 +80,12 @@ object Scuartz {
     trigger.setJobName(jobName)
     RichTrigger(trigger, None)
   }
-
-  implicit def funcToJobInfo (f : JobExecutionContext ⇒ Unit) = new JobInfo(f)
-
-  implicit def funcToJobInfo (f : () ⇒ Unit) = 
-    new JobInfo((ignore : JobExecutionContext) ⇒ f())
+  
+  implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
+  
+  // unusable because of issue with zero-arg constructors
+  // implicit def funcToJobInfo (f : JobExecutionContext ⇒ Unit) = new JobInfo(f)
+  // implicit def funcToJobInfo (f : () ⇒ Unit) = 
+  //   new JobInfo((ignore : JobExecutionContext) ⇒ f())
 }
 

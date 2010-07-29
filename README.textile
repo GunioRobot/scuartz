@@ -1,1 +1,3 @@
+h1. Scuartz
+
 This is a set of Scala wrappers and DSL around the Quartz scheduling library.
