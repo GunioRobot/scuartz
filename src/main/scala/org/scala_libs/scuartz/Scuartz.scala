@@ -1,7 +1,7 @@
 package org.scala_libs.scuartz
 
 import java.util.Date
-import org.quartz.{Job,JobDetail,JobExecutionContext,Scheduler,SimpleTrigger,Trigger}
+import org.quartz.{Job,JobDetail,JobExecutionContext,Scheduler,SimpleTrigger,Trigger,CronExpression}
 
 object Scuartz {
   
@@ -72,6 +72,18 @@ object Scuartz {
       this
     }
   }
+  
+  case class Cron(
+    seconds: String = "*",
+    minutes: String = "*",
+    hours: String = "*",
+    dayOfMonth: String = "*",
+    month: String = "*",
+    dayOfWeek: String = "?",
+    year: String = ""
+  ) {
+    override def toString = productIterator mkString " "
+  }
 
   implicit def schedulerToRichScheduler (scheduler : Scheduler) = new RichScheduler(scheduler)
 
@@ -80,6 +92,8 @@ object Scuartz {
     trigger.setJobName(jobName)
     RichTrigger(trigger, None)
   }
+  
+  implicit def cronToExpression(cron: Cron) = new CronExpression(cron.toString)
   
   implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
   

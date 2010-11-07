@@ -65,5 +65,9 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       sched.shutdown()
       CounterJob.counter must_== 5
     }
+    
+    "implicitly convert a RichCron to CronExpression" in {
+      Cron(minutes="15").getCronExpression must_== "* 15 * * * ? "
+    }
   }
 }
