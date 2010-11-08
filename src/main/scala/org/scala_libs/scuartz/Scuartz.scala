@@ -73,16 +73,23 @@ object Scuartz {
     }
   }
   
+  type CronSubExpr = Set[Range]
   case class Cron(
-    seconds: String = "*",
-    minutes: String = "*",
-    hours: String = "*",
-    dayOfMonth: String = "*",
-    month: String = "*",
-    dayOfWeek: String = "?",
-    year: String = ""
+    seconds: CronSubExpr = Set(),
+    minutes: CronSubExpr = Set(),
+    hours: CronSubExpr = Set(),
+    dayOfMonth: CronSubExpr = Set(),
+    month: CronSubExpr = Set(),
+    dayOfWeek: CronSubExpr = Set(),
+    year: CronSubExpr = Set()
   ) {
-    override def toString = productIterator mkString " "
+    override def toString = productIterator map {
+      case s: Set[Range] => if (s isEmpty) "*" else s map { r =>
+        val step = if (r.step == 1) "" else "/" + r.step
+        val end = if (r.start == r.end) "" else "-" + r.end
+        r.start + end + step
+      } mkString ","
+    } mkString " "
   }
 
   implicit def schedulerToRichScheduler (scheduler : Scheduler) = new RichScheduler(scheduler)
@@ -94,6 +101,10 @@ object Scuartz {
   }
   
   implicit def cronToExpression(cron: Cron) = new CronExpression(cron.toString)
+  
+  implicit def intToCronSubExpr(i: Int): CronSubExpr = Set(i to i)
+  
+  implicit def rangeToCronSubExpr(r: Range): CronSubExpr = Set(r)
   
   implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
   

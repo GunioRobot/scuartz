@@ -66,8 +66,20 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       CounterJob.counter must_== 5
     }
     
-    "implicitly convert a RichCron to CronExpression" in {
-      Cron(minutes="15").getCronExpression must_== "* 15 * * * ? "
+    "implicitly convert an Int to a Cron sub-expression" in {
+      Cron(minutes=15).toString must_== "* 15 * * * * *"
+    }
+
+    "implicitly convert a Range to a Cron sub-expression" in {
+      Cron(hours=8 to 17).toString must_== "* * 8-17 * * * *"
+    }
+
+    "implicitly convert a Set of Ranges to a Cron sub-expression" in {
+      Cron(month=Set(4 to 5, 9 to 10)).toString must_== "* * * * 4-5,9-10 * *"
+    }
+
+    "implicitly convert a Range by interval to Cron sub-expression" in {
+      Cron(seconds=15 to 30 by 5).toString must_== "15-30/5 * * * * * *"
     }
   }
 }
