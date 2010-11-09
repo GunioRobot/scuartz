@@ -73,23 +73,35 @@ object Scuartz {
     }
   }
   
-  type CronSubExpr = Set[Range]
+  class CronSubExpr(val rangeSet: Set[Range]) {
+    def toStringEmpty = "*"
+    override def toString =
+      if (rangeSet isEmpty)
+        toStringEmpty
+      else
+        rangeSet map { r =>
+          val step = if (r.step == 1) "" else "/" + r.step
+          val end = if (r.start == r.end) "" else "-" + r.end
+          r.start + end + step
+        } mkString ","
+  }
+  
+  val EmptyCronSubExpr = new CronSubExpr(Set())
+  
   case class Cron(
-    seconds: CronSubExpr = Set(),
-    minutes: CronSubExpr = Set(),
-    hours: CronSubExpr = Set(),
-    dayOfMonth: CronSubExpr = Set(),
-    month: CronSubExpr = Set(),
-    dayOfWeek: CronSubExpr = Set(),
-    year: CronSubExpr = Set()
+    seconds: CronSubExpr = EmptyCronSubExpr,
+    minutes: CronSubExpr = EmptyCronSubExpr,
+    hours: CronSubExpr = EmptyCronSubExpr,
+    dayOfMonth: CronSubExpr = EmptyCronSubExpr,
+    month: CronSubExpr = EmptyCronSubExpr,
+    dayOfWeek: CronSubExpr = new CronSubExpr(Set()){
+      override def toStringEmpty = "?"
+    },
+    year: CronSubExpr = new CronSubExpr(Set()) {
+      override def toStringEmpty = ""
+    }
   ) {
-    override def toString = productIterator map {
-      case s: Set[Range] => if (s isEmpty) "*" else s map { r =>
-        val step = if (r.step == 1) "" else "/" + r.step
-        val end = if (r.start == r.end) "" else "-" + r.end
-        r.start + end + step
-      } mkString ","
-    } mkString " "
+    override def toString = productIterator mkString " "
   }
 
   implicit def schedulerToRichScheduler (scheduler : Scheduler) = new RichScheduler(scheduler)
@@ -102,9 +114,11 @@ object Scuartz {
   
   implicit def cronToExpression(cron: Cron) = new CronExpression(cron.toString)
   
-  implicit def intToCronSubExpr(i: Int): CronSubExpr = Set(i to i)
+  implicit def intToCronSubExpr(i: Int): CronSubExpr = new CronSubExpr(Set(i to i))
   
-  implicit def rangeToCronSubExpr(r: Range): CronSubExpr = Set(r)
+  implicit def rangeToCronSubExpr(r: Range): CronSubExpr = new CronSubExpr(Set(r))
+  
+  implicit def rangeSetToCronSubExpr[R <: Range](s: Set[R]): CronSubExpr = new CronSubExpr(s.asInstanceOf[Set[Range]])
   
   implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
   
