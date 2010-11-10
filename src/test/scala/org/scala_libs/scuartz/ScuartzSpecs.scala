@@ -70,6 +70,10 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       Cron(minutes=15).toString must_== "* 15 * * * ? "
     }
 
+    "implicitly convert a Set of Int to a Cron sub-expression" in {
+      Cron(minutes=Set(15, 30, 45)).toString must_== "* 15,30,45 * * * ? "
+    }
+
     "implicitly convert a Range to a Cron sub-expression" in {
       Cron(hours=8 to 17).toString must_== "* * 8-17 * * ? "
     }
@@ -80,6 +84,10 @@ class ScuartzSpecs extends Specification with DetailedFailures {
 
     "implicitly convert a Range by interval to Cron sub-expression" in {
       Cron(seconds=15 to 30 by 5).toString must_== "15-30/5 * * * * ? "
+    }
+
+    "implicitly convert a Set of Int with interval to Cron sub-expression" in {
+      Cron(seconds=Set(5 by 15, 10 by 3)).toString must_== "5/15,10/3 * * * * ? "
     }
   }
 }

@@ -116,6 +116,10 @@ object Scuartz {
   
   implicit def intToCronSubExpr(i: Int): CronSubExpr = new CronSubExpr(Set(i to i))
   
+  implicit def intToRange(i: Int): Range = i to i
+  
+  implicit def intSetToRangeSet(s: Set[Int]): CronSubExpr = new CronSubExpr(s map (i => i to i))
+  
   implicit def rangeToCronSubExpr(r: Range): CronSubExpr = new CronSubExpr(Set(r))
   
   implicit def rangeSetToCronSubExpr[R <: Range](s: Set[R]): CronSubExpr = new CronSubExpr(s.asInstanceOf[Set[Range]])
