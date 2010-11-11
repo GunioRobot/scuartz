@@ -73,33 +73,84 @@ object Scuartz {
     }
   }
   
-  class CronSubExpr(val rangeSet: Set[Range]) {
-    def toStringEmpty = "*"
+  class CronSubExpr[T <: TimeUnit](val rangeSet: Set[Range]) (implicit val timeUnit: T) {
+    
     override def toString =
       if (rangeSet isEmpty)
-        toStringEmpty
+        timeUnit.toStringEmpty
       else
         rangeSet map { r =>
+          if (r.end > timeUnit.maxValue)
+            throw new IllegalArgumentException("Maximum value for time unit " + timeUnit.getClass +
+                                               " exceeded: " + r.end)
+          if (r.start < timeUnit.minValue)
+            throw new IllegalArgumentException("Minimum value for time unit " + timeUnit.getClass +
+                                               " exceeded: " + r.start)
           val step = if (r.step == 1) "" else "/" + r.step
           val end = if (r.start == r.end) "" else "-" + r.end
           r.start + end + step
         } mkString ","
   }
   
-  val EmptyCronSubExpr = new CronSubExpr(Set())
+  trait TimeUnit {
+    val minValue: Int
+    val maxValue: Int
+    def toStringEmpty = "*"
+  }
+  
+  trait Second extends TimeUnit {
+    val minValue = 0
+    val maxValue = 59
+  }
+  implicit object Second extends Second
+  
+  trait Minute extends TimeUnit {
+    val minValue = 0
+    val maxValue = 59
+  }
+  implicit object Minute extends Minute
+  
+  trait Hour extends TimeUnit {
+    val minValue = 0
+    val maxValue = 23
+  }
+  implicit object Hour extends Hour
+  
+  trait DayOfMonth extends TimeUnit {
+    val minValue = 1
+    val maxValue = 31
+  }
+  implicit object DayOfMonth extends DayOfMonth
+  
+  trait Month extends TimeUnit {
+    val minValue = 1
+    val maxValue = 12
+  }
+  implicit object Month extends Month
+  
+  trait DayOfWeek extends TimeUnit {
+    val minValue = 1
+    val maxValue = 7
+    override def toStringEmpty = "?"
+  }
+  implicit object DayOfWeek extends DayOfWeek
+  
+  trait Year extends TimeUnit {
+    // according to quartz documentation
+    val minValue = 1970
+    val maxValue = 2099
+    override def toStringEmpty = ""
+  }
+  implicit object Year extends Year
   
   case class Cron(
-    seconds: CronSubExpr = EmptyCronSubExpr,
-    minutes: CronSubExpr = EmptyCronSubExpr,
-    hours: CronSubExpr = EmptyCronSubExpr,
-    dayOfMonth: CronSubExpr = EmptyCronSubExpr,
-    month: CronSubExpr = EmptyCronSubExpr,
-    dayOfWeek: CronSubExpr = new CronSubExpr(Set()){
-      override def toStringEmpty = "?"
-    },
-    year: CronSubExpr = new CronSubExpr(Set()) {
-      override def toStringEmpty = ""
-    }
+    seconds: CronSubExpr[Second] = Set(),
+    minutes: CronSubExpr[Minute] = Set(),
+    hours: CronSubExpr[Hour] = Set(),
+    dayOfMonth: CronSubExpr[DayOfMonth] = Set(),
+    month: CronSubExpr[Month] = Set(),
+    dayOfWeek: CronSubExpr[DayOfWeek] = Set(),
+    year: CronSubExpr[Year] = Set()
   ) {
     override def toString = productIterator mkString " "
   }
@@ -114,15 +165,19 @@ object Scuartz {
   
   implicit def cronToExpression(cron: Cron) = new CronExpression(cron.toString)
   
-  implicit def intToCronSubExpr(i: Int): CronSubExpr = new CronSubExpr(Set(i to i))
+  implicit def intToCronSubExpr[T <: TimeUnit](i: Int) (implicit timeUnit: T) : CronSubExpr[T] =
+    new CronSubExpr[T](Set(i to i)) (timeUnit)
   
   implicit def intToRange(i: Int): Range = i to i
   
-  implicit def intSetToRangeSet(s: Set[Int]): CronSubExpr = new CronSubExpr(s map (i => i to i))
+  implicit def intSetToRangeSet[T <: TimeUnit](s: Set[Int]) (implicit timeUnit: T) : CronSubExpr[T] =
+    new CronSubExpr[T](s map (i => i to i)) (timeUnit)
   
-  implicit def rangeToCronSubExpr(r: Range): CronSubExpr = new CronSubExpr(Set(r))
+  implicit def rangeToCronSubExpr[T <: TimeUnit](r: Range) (implicit timeUnit: T) : CronSubExpr[T] =
+    new CronSubExpr[T](Set(r)) (timeUnit)
   
-  implicit def rangeSetToCronSubExpr[R <: Range](s: Set[R]): CronSubExpr = new CronSubExpr(s.asInstanceOf[Set[Range]])
+  implicit def rangeSetToCronSubExpr[T <: TimeUnit,R <: Range](s: Set[R]) (implicit timeUnit: T) : CronSubExpr[T] =
+    new CronSubExpr[T](s.asInstanceOf[Set[Range]]) (timeUnit)
   
   implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
   

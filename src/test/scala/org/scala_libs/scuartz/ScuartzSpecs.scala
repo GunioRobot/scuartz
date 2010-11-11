@@ -89,5 +89,13 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     "implicitly convert a Set of Int with interval to Cron sub-expression" in {
       Cron(seconds=Set(5 by 15, 10 by 3)).toString must_== "5/15,10/3 * * * * ? "
     }
+    
+    "reject sub-expression exceeding maximum range" in {
+      Cron(seconds=70).toString must throwAn[IllegalArgumentException]
+    }
+    
+    "reject sub-expression exceeding minimum range" in {
+      Cron(month=0).toString must throwAn[IllegalArgumentException]
+    }
   }
 }
