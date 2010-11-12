@@ -10,6 +10,9 @@ import org.specs.specification._
 
 import Scuartz._
 
+import WeekDay._
+import MonthName._
+
 class TestJob extends Job {
   def execute(ctxt : JobExecutionContext) {
     println("test")
@@ -86,6 +89,10 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       Cron(seconds=15 to 30 by 5).toString must_== "15-30/5 * * * * ? "
     }
 
+    "implicitly convert Int with interval to Cron sub-expression" in {
+      Cron(year=2010 by 2).toString must_== "* * * * * ? 2010/2"
+    }
+
     "implicitly convert a Set of Int with interval to Cron sub-expression" in {
       Cron(seconds=Set(5 by 15, 10 by 3)).toString must_== "5/15,10/3 * * * * ? "
     }
@@ -96,6 +103,63 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     
     "reject sub-expression exceeding minimum range" in {
       Cron(month=0).toString must throwAn[IllegalArgumentException]
+    }
+    
+    "implicitly convert week day to Cron sub-expression" in {
+      Cron(dayOfWeek=Mon).toString must_== "* * * * * 2 "
+    }
+
+    "implicitly convert week day range to Cron sub-expression" in {
+      Cron(dayOfWeek=Mon to Wed).toString must_== "* * * * * 2-4 "
+    }
+
+    "implicitly convert week day with interval to Cron sub-expression" in {
+      Cron(dayOfWeek=Mon by 2).toString must_== "* * * * * 2/2 "
+    }
+
+    "implicitly convert week set to Cron sub-expression" in {
+      Cron(dayOfWeek=Set(Mon,Wed)).toString must_== "* * * * * 2,4 "
+    }
+
+    "implicitly convert a set of week ranges to Cron sub-expression" in {
+      Cron(dayOfWeek=Set(Mon to Wed,Fri to Sat)).toString must_== "* * * * * 2-4,6-7 "
+    }
+
+    "implicitly convert a set of week days with interval to Cron sub-expression" in {
+      Cron(dayOfWeek=Set(Mon by 2)).toString must_== "* * * * * 2/2 "
+    }
+
+    "implicitly convert a set of week day ranges with interval to Cron sub-expression" in {
+      Cron(dayOfWeek=Set(Mon to Fri by 2)).toString must_== "* * * * * 2-6/2 "
+    }
+    
+    
+    "implicitly convert month to Cron sub-expression" in {
+      Cron(month=Feb).toString must_== "* * * * 2 ? "
+    }
+
+    "implicitly convert month range to Cron sub-expression" in {
+      Cron(month=Apr to Jun).toString must_== "* * * * 4-6 ? "
+    }
+
+    "implicitly convert month with interval to Cron sub-expression" in {
+      Cron(month=Mar by 3).toString must_== "* * * * 3/3 ? "
+    }
+
+    "implicitly convert month set to Cron sub-expression" in {
+      Cron(month=Set(Apr,May,Jul)).toString must_== "* * * * 4,5,7 ? "
+    }
+
+    "implicitly convert a set of month ranges to Cron sub-expression" in {
+      Cron(month=Set(Jan to Mar,Aug to Oct)).toString must_== "* * * * 1-3,8-10 ? "
+    }
+
+    "implicitly convert a set of months with interval to Cron sub-expression" in {
+      Cron(month=Set(Jun by 6,Feb by 4)).toString must_== "* * * * 6/6,2/4 ? "
+    }
+
+    "implicitly convert a set of month ranges with interval to Cron sub-expression" in {
+      Cron(month=Set(Feb to Aug by 3)).toString must_== "* * * * 2-8/3 ? "
     }
   }
 }

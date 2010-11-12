@@ -143,14 +143,36 @@ object Scuartz {
   }
   implicit object Year extends Year
   
+  class WeekRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
+  
+  object WeekDay extends Enumeration(1) {
+    class WeekVal extends Val(nextId) {
+      def to(end: WeekVal) = new WeekRange(id, end.id, 1)
+      def by(step: Int) = new WeekRange(id, id, step)
+    }
+    private def WeekVal = new WeekVal
+    val Sun, Mon, Tue, Wed, Thu, Fri, Sat = WeekVal
+  }
+  
+  class MonthRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
+  
+  object MonthName extends Enumeration(1) {
+    class MonthVal extends Val(nextId) {
+      def to(end: MonthVal) = new MonthRange(id, end.id, 1)
+      def by(step: Int) = new MonthRange(id, id, step)
+    }
+    private def MonthVal = new MonthVal
+    val Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec = MonthVal
+  }
+  
   case class Cron(
-    seconds: CronSubExpr[Second] = Set(),
-    minutes: CronSubExpr[Minute] = Set(),
-    hours: CronSubExpr[Hour] = Set(),
-    dayOfMonth: CronSubExpr[DayOfMonth] = Set(),
-    month: CronSubExpr[Month] = Set(),
-    dayOfWeek: CronSubExpr[DayOfWeek] = Set(),
-    year: CronSubExpr[Year] = Set()
+    seconds: CronSubExpr[Second] = Set[Int](),
+    minutes: CronSubExpr[Minute] = Set[Int](),
+    hours: CronSubExpr[Hour] = Set[Int](),
+    dayOfMonth: CronSubExpr[DayOfMonth] = Set[Int](),
+    month: CronSubExpr[Month] = Set[Int](),
+    dayOfWeek: CronSubExpr[DayOfWeek] = Set[Int](),
+    year: CronSubExpr[Year] = Set[Int]()
   ) {
     override def toString = productIterator mkString " "
   }
@@ -168,16 +190,28 @@ object Scuartz {
   implicit def intToCronSubExpr[T <: TimeUnit](i: Int) (implicit timeUnit: T) : CronSubExpr[T] =
     new CronSubExpr[T](Set(i to i)) (timeUnit)
   
-  implicit def intToRange(i: Int): Range = i to i
+  implicit def intToRange[T <% Int](i: T): Range = Range.inclusive(i, i)
   
-  implicit def intSetToRangeSet[T <: TimeUnit](s: Set[Int]) (implicit timeUnit: T) : CronSubExpr[T] =
+  implicit def intSetToCronSubExpr[T <: TimeUnit](s: Set[Int]) (implicit timeUnit: T) : CronSubExpr[T] =
     new CronSubExpr[T](s map (i => i to i)) (timeUnit)
   
-  implicit def rangeToCronSubExpr[T <: TimeUnit](r: Range) (implicit timeUnit: T) : CronSubExpr[T] =
+  implicit def rangeToCronSubExpr[T <: TimeUnit] (r: Range) (implicit timeUnit: T) : CronSubExpr[T] =
     new CronSubExpr[T](Set(r)) (timeUnit)
   
   implicit def rangeSetToCronSubExpr[T <: TimeUnit,R <: Range](s: Set[R]) (implicit timeUnit: T) : CronSubExpr[T] =
     new CronSubExpr[T](s.asInstanceOf[Set[Range]]) (timeUnit)
+  
+  implicit def weekDayToCronSubExpr(wd: WeekDay.WeekVal): CronSubExpr[DayOfWeek] =
+    new CronSubExpr[DayOfWeek](Set(wd.id to wd.id)) (DayOfWeek)
+  
+  implicit def weekDaySetToCronSubExpr(s: Set[WeekDay.WeekVal]): CronSubExpr[DayOfWeek] =
+    new CronSubExpr[DayOfWeek](s map (wd => wd.id to wd.id)) (DayOfWeek)
+  
+  implicit def monthToCronSubExpr(m: MonthName.MonthVal): CronSubExpr[Month] =
+    new CronSubExpr[Month](Set(m.id to m.id)) (Month)
+  
+  implicit def monthSetToCronSubExpr(s: Set[MonthName.MonthVal]): CronSubExpr[Month] =
+    new CronSubExpr[Month](s map (m => m.id to m.id)) (Month)
   
   implicit def jobClazzToJobInfo[T <: Job](clazz: Class[T]) = new JobInfo(clazz)
   
