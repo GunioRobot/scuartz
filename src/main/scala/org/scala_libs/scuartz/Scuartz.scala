@@ -87,6 +87,7 @@ object Scuartz {
             throw new IllegalArgumentException("Minimum value for time unit " + timeUnit.getClass +
                                                " exceeded: " + r.start)
           val step = if (r.step == 1) "" else "/" + r.step
+          // technically omitting the end means the max value for Quartz
           val end = if (r.start == r.end) "" else "-" + r.end
           r.start + end + step
         } mkString ","
@@ -131,12 +132,13 @@ object Scuartz {
   trait DayOfWeek extends TimeUnit {
     val minValue = 1
     val maxValue = 7
+    // quartz doesn't support both day of week and day of month with * wildcard
     override def toStringEmpty = "?"
   }
   implicit object DayOfWeek extends DayOfWeek
   
   trait Year extends TimeUnit {
-    // according to quartz documentation
+    // according to quartz documentation, years can range from 1970 to 2099
     val minValue = 1970
     val maxValue = 2099
     override def toStringEmpty = ""
@@ -146,10 +148,12 @@ object Scuartz {
   class WeekRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
   
   object WeekDay extends Enumeration(1) {
+    // add custom methods to the enum type to return a week-specific range
     class WeekVal extends Val(nextId) {
       def to(end: WeekVal) = new WeekRange(id, end.id, 1)
       def by(step: Int) = new WeekRange(id, id, step)
     }
+    // custom builder method- can't use Value
     private def WeekVal = new WeekVal
     val Sun, Mon, Tue, Wed, Thu, Fri, Sat = WeekVal
   }
@@ -157,10 +161,12 @@ object Scuartz {
   class MonthRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
   
   object MonthName extends Enumeration(1) {
+    // add custom methods to the enum type to return a month-specific range
     class MonthVal extends Val(nextId) {
       def to(end: MonthVal) = new MonthRange(id, end.id, 1)
       def by(step: Int) = new MonthRange(id, id, step)
     }
+    // custom builder method- can't use Value
     private def MonthVal = new MonthVal
     val Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec = MonthVal
   }
@@ -199,6 +205,8 @@ object Scuartz {
     new CronSubExpr[T](Set(r)) (timeUnit)
   
   implicit def rangeSetToCronSubExpr[T <: TimeUnit,R <: Range](s: Set[R]) (implicit timeUnit: T) : CronSubExpr[T] =
+    // since this is an immutable set we can coerce subclasses of Range
+    // like Range.Inclusive as the set type parameter
     new CronSubExpr[T](s.asInstanceOf[Set[Range]]) (timeUnit)
   
   implicit def weekDayToCronSubExpr(wd: WeekDay.WeekVal): CronSubExpr[DayOfWeek] =
