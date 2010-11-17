@@ -145,26 +145,34 @@ object Scuartz {
   }
   implicit object Year extends Year
   
-  class WeekRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
+  class WeekRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step) {
+    def /(step: Int) = by(step)
+  }
   
   object WeekDay extends Enumeration(1) {
     // add custom methods to the enum type to return a week-specific range
     class WeekVal extends Val(nextId) {
       def to(end: WeekVal) = new WeekRange(id, end.id, 1)
+      def -(end: WeekVal) = to(end)
       def by(step: Int) = new WeekRange(id, id, step)
+      def /(step: Int) = by(step)
     }
     // custom builder method- can't use Value
     private def WeekVal = new WeekVal
     val Sun, Mon, Tue, Wed, Thu, Fri, Sat = WeekVal
   }
   
-  class MonthRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step)
+  class MonthRange(start: Int, end: Int, step: Int) extends Range.Inclusive(start, end, step) {
+    def /(step: Int) = by(step)
+  }
   
   object MonthName extends Enumeration(1) {
     // add custom methods to the enum type to return a month-specific range
     class MonthVal extends Val(nextId) {
       def to(end: MonthVal) = new MonthRange(id, end.id, 1)
+      def -(end: MonthVal) = to(end)
       def by(step: Int) = new MonthRange(id, id, step)
+      def /(step: Int) = by(step)
     }
     // custom builder method- can't use Value
     private def MonthVal = new MonthVal

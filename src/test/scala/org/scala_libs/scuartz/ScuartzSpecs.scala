@@ -161,5 +161,13 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     "implicitly convert a set of month ranges with interval to Cron sub-expression" in {
       Cron(month=Set(Feb to Aug by 3)).toString must_== "* * * * 2-8/3 ? "
     }
+    
+    "use alternative notation for week days" in {
+      Cron(dayOfWeek=(Mon-Fri)/2).toString must_== "* * * * * 2-6/2 "
+    }
+
+    "use alternative notation for months" in {
+      Cron(month=(Apr-Oct)/2).toString must_== "* * * * 4-10/2 ? "
+    }
   }
 }
