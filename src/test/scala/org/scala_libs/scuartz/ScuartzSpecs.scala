@@ -28,16 +28,16 @@ class CounterJob extends Job {
     CounterJob.counter += 1
     println(CounterJob.counter)
   }
-} 
+}
 
 
 class ScuartzSpecs extends Specification with DetailedFailures {
-  
+
   "Scuartz" should {
     val sched = StdSchedulerFactory.getDefaultScheduler
 
     val testJob = new JobDetail("test", classOf[TestJob])
-   
+
     sched.addJob(testJob, true)
 
     "implicitly convert to RichScheduler as needed" in {
@@ -55,12 +55,12 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       val now = System.currentTimeMillis
       (sched.schedule { "test" named "test2" at (now + 5000l) every 1000l until (new Date(now + 10000l)) }).isExpectation
     }
-    
+
     "schedule a job from a compliant class" in {
       (sched.schedule {
         classOf[TestJob] as "ticker" every 1000l }).isExpectation
     }
-    
+
     "schedule a closure properly" in {
       sched.start()
       sched.schedule { classOf[CounterJob] as "incrementer" after 1000l every 100l repeat 5 }
@@ -68,7 +68,7 @@ class ScuartzSpecs extends Specification with DetailedFailures {
       sched.shutdown()
       CounterJob.counter must_== 5
     }
-    
+
     "implicitly convert an Int to a Cron sub-expression" in {
       Cron(minutes=15).toString must_== "* 15 * * * ? "
     }
@@ -96,15 +96,15 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     "implicitly convert a Set of Int with interval to Cron sub-expression" in {
       Cron(seconds=Set(5 by 15, 10 by 3)).toString must_== "5/15,10/3 * * * * ? "
     }
-    
+
     "reject sub-expression exceeding maximum range" in {
       Cron(seconds=70).toString must throwAn[IllegalArgumentException]
     }
-    
+
     "reject sub-expression exceeding minimum range" in {
       Cron(month=0).toString must throwAn[IllegalArgumentException]
     }
-    
+
     "implicitly convert week day to Cron sub-expression" in {
       Cron(dayOfWeek=Mon).toString must_== "* * * * * 2 "
     }
@@ -132,8 +132,8 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     "implicitly convert a set of week day ranges with interval to Cron sub-expression" in {
       Cron(dayOfWeek=Set(Mon to Fri by 2)).toString must_== "* * * * * 2-6/2 "
     }
-    
-    
+
+
     "implicitly convert month to Cron sub-expression" in {
       Cron(month=Feb).toString must_== "* * * * 2 ? "
     }
@@ -161,7 +161,7 @@ class ScuartzSpecs extends Specification with DetailedFailures {
     "implicitly convert a set of month ranges with interval to Cron sub-expression" in {
       Cron(month=Set(Feb to Aug by 3)).toString must_== "* * * * 2-8/3 ? "
     }
-    
+
     "use alternative notation for week days" in {
       Cron(dayOfWeek=(Mon-Fri)/2).toString must_== "* * * * * 2-6/2 "
     }
